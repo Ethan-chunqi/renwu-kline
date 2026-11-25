@@ -16,3 +16,43 @@ dialog{position:fixed;inset:0;width:min(610px,calc(100% - 30px));max-height:min(
 
 .annual-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:13px}.annual-toolbar select{background:#1c2821;border:1px solid #425146;border-radius:5px;color:var(--text);font:14px var(--sans);padding:4px 7px;max-width:100%}.annual-toolbar>span{margin-left:auto;color:var(--dim);font-size:12px}.year-age{display:inline-block;margin-left:9px;font:500 15px var(--sans);color:#dfc9a6}.exact-age{color:#ddc49e;font-size:14px;margin:-8px 0 13px;line-height:1.5}.list-modes{display:flex;gap:6px;margin:0 0 12px}.list-modes button{font-size:14px;color:var(--muted);padding:6px 10px;border:1px solid var(--edge);border-radius:5px}.list-modes button[aria-pressed=true]{border-color:#75684c;background:#282d22;color:#ead4a9}.event-item{grid-template-columns:66px minmax(0,1fr) auto;align-items:center}.list-stamp{display:flex;flex-direction:column;gap:4px}.list-age{font-size:12px;color:var(--dim)}
 @media(max-width:500px){.annual-toolbar{gap:5px}.year-age{font-size:14px;margin-left:6px}.annual-toolbar select{font-size:13px}.event-item{grid-template-columns:63px minmax(0,1fr) auto}}
+
+/* The annual chart and the historical atlas share the same selected year. */
+:root{
+  --bg:#091113;--panel:#101a1c;--soft:#192527;--edge:#2a3939;
+  --muted:#afbbb5;--dim:#95a69e;--gold:#e1bc85;--text:#f4f1e7;
+}
+.wrap{width:min(1464px,94%)}.site-nav{background:#10191a;border-color:#2c3937}
+.nav-inner{height:54px}.site-nav nav a{font-size:13px}
+.hero{background:#122021}.hero-inner{position:relative;min-height:189px;padding:20px 0 18px}
+.hero-copy{width:70%;z-index:1}.title-line{margin:5px 0}.title-line h1{font-size:clamp(44px,4.3vw,63px);line-height:1.12}.hero-intro{font-size:clamp(16px,1.38vw,20px)}
+.classification{font-size:12px}.bio-meta{margin-top:11px}.hero-picture{width:48%;background-position:76% 37%}
+.hero[data-person=zhu] .hero-picture{width:78%;background-image:linear-gradient(90deg,#122021 0%,#1220219e 65%,#122021bd 100%),url(./zhu-full.webp)!important;background-size:cover;background-position:50% 89%;filter:saturate(.45);opacity:.27;mask-image:linear-gradient(90deg,transparent,#000 32%);-webkit-mask-image:linear-gradient(90deg,transparent,#000 32%)}
+.portrait-plate{position:absolute;right:8%;top:2%;height:97%;width:22%;display:flex;align-items:center;justify-content:center;padding:0}.portrait-plate img{height:100%;width:100%;object-fit:contain;filter:drop-shadow(0 6px 12px #07121080)}
+.portrait-plate span{position:absolute;bottom:6%;right:-6%;padding:3px 7px;background:#102022cf;border:1px solid #6d6952;color:#e2ceaa;border-radius:3px;font-size:11px;letter-spacing:.06em}
+.portrait-plate:hover img{filter:drop-shadow(0 4px 16px #dbc79842)}.full-painting{display:block;max-height:63vh;max-width:100%;object-fit:contain;margin:0 auto 12px}
+.workspace{padding-top:19px}.workspace-heading{margin-bottom:11px}.market-layout{display:grid;grid-template-columns:minmax(0,1.44fr) minmax(355px,1fr);grid-template-areas:"chart atlas" "event atlas";gap:12px;align-items:start}
+.chart-panel{grid-area:chart;background:#0f1a1b;padding:16px 19px 12px;border-color:#354442;border-radius:9px}
+.chart-panel .chart-head{margin-top:12px;align-items:center}.chart-head h3{font-size:20px;letter-spacing:.04em}.sub{margin-top:3px}
+.metric-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--edge);padding-bottom:8px}
+#metric-tabs{display:flex;flex-wrap:wrap;gap:4px}
+#metric-tabs button{padding:4px 9px;border-radius:3px;color:#aebdb4;font-size:14px;white-space:nowrap}
+#metric-tabs button[aria-pressed=true]{background:#303a31;color:#f3d39d;box-shadow:inset 0 -2px #d4b37b}
+#metric-select{font:13px var(--sans);color:#cad5cc;max-width:42%;border:1px solid #394743;border-radius:4px;background:#182323;padding:4px}
+.quote-main{display:flex;align-items:baseline;gap:8px;margin:7px 0 1px;font-variant-numeric:tabular-nums}
+#quote-price{font:600 clamp(35px,3.4vw,54px)/1 var(--sans);letter-spacing:-.07em;color:#f4edda}
+.price-unit{color:var(--dim);font-size:13px}#quote-change{font:600 15px var(--mono);margin-left:4px}
+.model-tag{font-size:12px;line-height:1.3;margin-left:auto;color:#a7b4ac;border:1px solid #394641;border-radius:3px;padding:2px 5px}
+#life-chart{margin:10px 0 5px;flex:initial}.chart-foot{margin:0}.chart-foot .annual-toolbar{margin:0}
+.atlas-panel{grid-area:atlas;padding:15px;min-width:0;border-radius:9px;background:#101b1b;border-color:#354442}
+.atlas-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}.atlas-title h3{font:700 22px var(--serif)}.atlas-title span{font:13px var(--mono);color:var(--gold)}
+.atlas-transport{display:flex;gap:10px;align-items:center;padding:12px 0 1px;border-top:1px solid var(--edge);margin-top:12px}.atlas-transport input{accent-color:#dcc094;min-width:44px;flex:1;cursor:pointer}.atlas-transport output{font:14px var(--mono);color:var(--gold);white-space:nowrap}
+.event-panel{grid-area:event;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.92fr);column-gap:20px;align-items:start;padding:14px 18px 13px;border-radius:8px;background:#142021}
+.year-row,#event-title,#event-desc,#exact-age,#factor-moves{grid-column:1}.event-panel .year-row{justify-content:flex-start;gap:12px}.event-panel #sample-year{font-size:17px}.event-panel #event-title{font-size:25px;margin:8px 0 5px}.event-panel #event-desc{font-size:14px;line-height:1.65;margin-bottom:8px}
+.event-panel #factor-moves{margin-bottom:0}.group-bars{grid-column:2;grid-row:1 / span 3;margin:0;padding:2px 0 8px;border:0;gap:8px}
+#health-summary{grid-column:2;grid-row:4 / span 3;align-self:start}.health-summary{border-top:1px solid var(--edge);padding-top:8px;color:var(--muted);font-size:13px}.health-summary>div{display:flex;gap:6px;flex-wrap:wrap;align-items:baseline}.health-summary strong{font-family:var(--mono);color:#d9c5ab}.health-summary p{font-size:13px;line-height:1.6;margin-top:5px}.health-summary a,.health-summary button{color:var(--gold);font-size:12px;padding:0;text-underline-offset:3px}.health-summary button{margin-left:auto;text-decoration:underline}.detail-links{grid-column:1;margin-top:8px;justify-content:flex-start;gap:14px}.factor-origin{display:block;font:11px var(--sans);color:var(--dim);margin-top:2px}
+body [hidden]{display:none!important}.timeline{margin-top:23px}.section-title h2{font-size:25px}
+@media(min-width:1600px){.hero-inner{min-height:209px}}
+@media(max-width:1000px) and (min-width:801px){.market-layout{grid-template-columns:minmax(0,1.22fr) minmax(320px,1fr)}.chart-panel,.atlas-panel{padding:12px}.event-panel{display:flex;gap:4px}.group-bars,.health-summary{width:100%}.group-bars{margin-top:6px}.event-panel .detail-links{margin-top:5px}#metric-tabs button{padding:4px 6px}}
+@media(max-width:800px){.wrap{width:94%}.market-layout{grid-template-columns:minmax(0,1fr);grid-template-areas:"chart" "atlas" "event"}.hero-inner{min-height:177px}.hero-intro{font-size:16px}.bio-meta{margin-top:9px}.hero-copy{width:70%}.portrait-plate{right:1%;width:25%;top:4%;height:93%}.portrait-plate span{right:0}.workspace{padding-top:14px}.atlas-panel,.chart-panel{padding:13px 14px 11px}.hero[data-person=zhu] .hero-picture{width:70%}}
+@media(max-width:500px){.nav-inner{height:48px}.title-line h1{font-size:43px}.hero-inner{min-height:159px}.hero-copy{width:69%}.classification{font-size:11px}.bio-meta{font-size:12px;row-gap:1px}.hero-intro{font-size:14px;line-height:1.5}.portrait-plate{width:28%;right:0;height:91%;top:5%}.portrait-plate span{font-size:9px;bottom:0}.workspace-heading{margin-bottom:8px}.section-title h2{font-size:21px}.metric-nav{gap:4px}.metric-nav #metric-tabs{gap:1px}#metric-tabs button{font-size:12px;padding:5px 6px}#metric-select{font-size:12px;max-width:38%}.chart-panel,.atlas-panel{padding:11px}.quote-main{margin-top:6px}.chart-head h3{font-size:17px}.chart-modes button{font-size:12px}.atlas-title h3{font-size:20px}.event-panel{display:flex;padding:13px 14px}.group-bars{margin:11px 0 3px;width:100%}.health-summary{margin-top:6px;width:100%}.detail-links{margin:7px 0}.annual-toolbar select{max-width:160px}.exact-age{margin:2px 0 8px}}

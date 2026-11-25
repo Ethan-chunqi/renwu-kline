@@ -7,10 +7,13 @@
   <title>人物K线 · 朱元璋</title>
   <meta name="description" content="一年一根 K 线，按周岁和公历年读历史人物一生的涨跌。">
   <link rel="icon" href="./mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=annual-1">
-  <script src="people-data.js?v=annual-1" defer></script>
-  <script src="chart.js?v=annual-1" defer></script>
-  <script src="app.js?v=annual-1" defer></script>
+  <link rel="stylesheet" href="style.css?v=market-2">
+  <script src="people-data.js?v=market-2" defer></script>
+  <script src="health-records.js?v=market-2" defer></script>
+  <script src="indices.js?v=market-2" defer></script>
+  <script src="atlas.js?v=market-2" defer></script>
+  <script src="chart.js?v=market-2" defer></script>
+  <script src="app.js?v=market-2" defer></script>
 </head>
 <body>
 <svg aria-hidden="true" class="svg-library" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -27,7 +30,7 @@
 </defs></svg>
 <header class="site-nav"><div class="wrap nav-inner">
   <a class="brand" href="#top" aria-label="人物K线首页"><img src="./mark.svg" width="34" height="34" alt="">人物<span>K线</span></a>
-  <nav aria-label="主要导航"><a href="#market">人生走势</a><a href="#timeline">生平年表</a></nav>
+  <nav aria-label="主要导航"><a href="#market">人生走势</a><a href="#atlas-panel">行迹与版图</a><a href="#timeline">生平年表</a></nav>
   <button class="library-toggle" id="open-library"><svg class="icon"><use href="#book"/></svg>人物库</button>
 </div></header>
 <main id="top">
@@ -37,24 +40,31 @@
       <div class="title-line"><h1 id="person-name">朱元璋</h1><span id="person-seal" class="seal"></span></div>
       <p id="hero-intro" class="hero-intro"></p>
       <div class="bio-meta"><span><svg class="icon"><use href="#calendar"/></svg><b id="person-dates"></b></span><i></i><span><svg class="icon"><use href="#pin"/></svg><span id="person-place"></span></span></div>
-    </div></div>
+    </div><button id="portrait-open" class="portrait-plate" aria-label="展开明太祖全身坐像"><img src="./zhu-figure.webp" alt="明太祖全身坐像"><span>查看全身像</span></button></div>
   </section>
   <div class="workspace wrap">
-    <div class="workspace-heading"><div class="section-title"><span class="square-mark"></span><h2 id="market">人生走势</h2></div><button id="open-method" class="text-button"><svg class="icon"><use href="#sliders"/></svg>评分口径</button></div>
+    <div class="workspace-heading"><div class="section-title"><span class="square-mark"></span><h2 id="market">人生行情</h2></div><button id="open-method" class="text-button"><svg class="icon"><use href="#sliders"/></svg>评分口径</button></div>
     <div class="market-layout">
       <section class="chart-panel panel" aria-label="走势交互图表">
-        <div class="chart-head"><div><h3>综合境遇指数</h3><p id="chart-window" class="sub"></p></div>
+        <div class="metric-nav"><div id="metric-tabs" aria-label="指数快捷切换"></div><select id="metric-select" aria-label="选择指数"></select></div>
+        <div class="chart-head"><div class="quote-name"><h3 id="quote-title">综合境遇指数</h3><p id="chart-window" class="sub"></p></div>
           <div class="chart-modes" aria-label="图表类型"><button id="candle-btn" aria-pressed="true"><svg class="icon"><use href="#candle"/></svg>K 线</button><button id="line-btn" aria-pressed="false"><svg class="icon"><use href="#trend"/></svg>折线</button></div>
         </div>
-        <div class="annual-toolbar"><label for="year-jump">查看年份</label><select id="year-jump"></select><span>年龄按年内周岁计</span></div>
+        <div class="quote-main"><strong id="quote-price"></strong><span class="price-unit">点</span><span id="quote-change"></span><span class="model-tag">模拟指数</span></div>
         <div id="life-chart" aria-label="人生走势，按左右方向键切换年份"></div>
-        <div class="chart-foot"><div class="legend"><span><i class="swatch up"></i>上涨</span><span><i class="swatch down"></i>下跌</span><span><i class="swatch neutral"></i>持平</span></div><button id="replay" class="small-button" aria-pressed="false"><svg class="icon"><use href="#play"/></svg><span>回放一生</span></button></div>
+        <div class="chart-foot"><div class="annual-toolbar"><label for="year-jump">选年</label><select id="year-jump"></select></div><button id="replay" class="small-button" aria-pressed="false"><svg class="icon"><use href="#play"/></svg><span>回放一生</span></button></div>
+      </section>
+      <section id="atlas-panel" class="atlas-panel panel" aria-label="随年份变化的中国地图">
+        <div class="atlas-title"><h3>行迹与版图</h3><span id="atlas-year-label"></span></div>
+        <div id="atlas-body"></div>
+        <div class="atlas-transport"><button id="map-play" class="small-button" aria-label="播放或暂停地图行程" aria-pressed="false"><svg class="icon"><use href="#play"/></svg><span>播放行程</span></button><input type="range" id="map-year" step="1" aria-label="地图年份"><output id="map-year-value" for="map-year"></output></div>
       </section>
       <aside class="event-panel panel" id="event-panel" aria-label="选中年份">
         <div class="year-row"><span id="sample-year"></span><span id="score-delta"></span></div>
         <h3 id="event-title"></h3><p id="event-desc"></p><p class="exact-age" id="exact-age" hidden></p>
         <div class="factor-moves" id="factor-moves"></div>
         <div class="group-bars" id="group-bars"></div>
+        <div id="health-summary" class="health-summary"><div><span>身体健康指数</span><strong id="health-number"></strong><button id="show-health">查看年 K</button></div><p id="health-context"></p><a id="health-source" target="_blank" rel="noopener" hidden>身体史料</a></div>
         <div class="detail-links"><button id="open-detail" class="detail-btn">查看分项依据</button><a id="event-source" class="source-link" target="_blank" rel="noopener">查阅史料</a></div>
       </aside>
     </div>

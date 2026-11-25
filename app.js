@@ -7,6 +7,12 @@
     { label: '权力与自主', factors: ['决策实权','资源调度','行动自由'], color: '#7ea8a1', desc: '分别考察能决定多大的事、能支配多少人力物力，以及能否选择自己的行动与去处。' },
     { label: '个人生活', factors: ['衣食住居','人身安全','身体健康','家庭关系'], color: '#b99caa', desc: '看生计与住所、遭遇拘押或暴力的风险、身体状况，以及亲友团聚与离散。' }
   ];
+  const metrics = [
+    {id:'all',label:'综合境遇',short:'综合'}, {id:'social',label:'社会处境',short:'社会'},
+    {id:'agency',label:'权力与自主',short:'权力'}, {id:'life',label:'个人生活',short:'生活'},
+    ...groups.flatMap(g=>g.factors).map((label,i)=>({id:'f'+i,label,short:i===9?'身体健康':label}))
+  ];
+  const metricNames = Object.fromEntries(metrics.map(item=>[item.id,item.label]));
   const weights = {
     balanced: {label:'均衡', w:[1,1,1]},
     society: {label:'侧重社会', w:[2,1,1]},
@@ -37,10 +43,11 @@
     for (let y = profile.start; y <= profile.end; y++) {
       const facts = byYear.get(y) || [];
       if (facts.length) basis = facts[facts.length - 1];
+      const health=window.HEALTH_RECORDS?.[profile.id]?.[y];
       events.push({
         y, age: y-profile.start, ageLabel: ageLabel(profile,y), facts, basis,
-        t: facts.length ? facts.map(f=>f.t).join('、') : '沿用前次估分',
-        d: facts.length ? facts.map(f=>f.d).join(' ') : '本站尚未收录这一年的独立事件。年度评分沿用 '+basis.y+' 年「'+basis.t+'」的估分。',
+        t: facts.length ? facts.map(f=>f.t).join('、') : (health?'身体状况见载':'阶段推演'),
+        d: facts.length ? facts.map(f=>f.d).join(' ') : (health?health.note:'最近一次用于评分的事件是 '+basis.y+' 年的「'+basis.t+'」。本年指数根据前后阶段推演。'),
         f: basis.f, s: basis.s
       });
     }
@@ -49,6 +56,7 @@
   const people = window.PEOPLE.map(annualProfile);
   const query = new URLSearchParams(location.search);
   let person = people.find(p => p.id === query.get('person')) || people[0];
+  let metric = Object.hasOwn(metricNames,query.get('index')) ? query.get('index') : 'all';
   let mode = query.get('mode') === 'line' ? 'line' : 'candle';
   let preset = Object.hasOwn(weights,query.get('weights')) ? query.get('weights') : 'balanced';
   let initialYear = person.defaultYear;
@@ -74,49 +82,36 @@
     return a;
   }
   function nodeScores() {
-    const w = weights[preset].w;
-    function scoreFactors(f) {
-      const parts = [f.slice(0,4),f.slice(4,7),f.slice(7,11)];
-      const means = parts.map(part => {
-        const known = part.filter(Number.isFinite);
-        return known.length ? known.reduce((a,b)=>a+b,0) / known.length : null;
-      });
-      const weightTotal = means.reduce((sum,n,i)=>sum+(n===null?0:w[i]),0);
-      return {
-        m: means.map(n => n === null ? null : Math.round(n)),
-        v: Math.round(means.reduce((sum,n,i)=>sum+(n === null ? 0 : n*w[i]),0) / weightTotal)
-      };
-    }
-    let previous;
-    for (const e of person.events) {
-      const observations = e.facts.map(fact=>scoreFactors(fact.f));
-      const close = observations.length ? observations[observations.length-1] : previous;
-      e.m = close.m; e.v = close.v;
-      e.o = previous?.v ?? observations[0].v;
-      e.h = Math.max(e.o, ...observations.map(s=>s.v));
-      e.l = Math.min(e.o, ...observations.map(s=>s.v));
-      previous = close;
-    }
+    window.computeLifeIndices(person,weights[preset].w);
+    applyMetric();
+  }
+  function applyMetric() {
+    for(const e of person.events) Object.assign(e,e.quotes[metric]);
+  }
+  function useMetric(value) {
+    if(!Object.hasOwn(metricNames,value)) return;
+    stopReplay();metric=value;applyMetric();updateWindow();showList();renderSelection();syncURL();
   }
   function syncURL() {
     const url = new URL(location.href);
     url.searchParams.set('person',person.id);
+    if(metric==='all') url.searchParams.delete('index'); else url.searchParams.set('index',metric);
     url.searchParams.delete('event');
     url.searchParams.set('year',String(person.events[selected].y));
     if(mode === 'line') url.searchParams.set('mode',mode); else url.searchParams.delete('mode');
     if(preset !== 'balanced') url.searchParams.set('weights',preset); else url.searchParams.delete('weights');
     try { history.replaceState(null,'',url); } catch {}
   }
-  function delta(i) { return i ? person.events[i].v - person.events[i-1].v : null; }
+  function delta(i) { return Math.round((person.events[i].v-person.events[i].o)*10)/10; }
   function colorFor(n) { return n > 0 ? 'positive' : n < 0 ? 'negative' : 'flat'; }
-  function signed(v) { return v > 0 ? '+'+v : v < 0 ? '−'+Math.abs(v) : '0'; }
+  function signed(v) { return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(1); }
   function fillTrack(value, color) {
     const track = el('span','bar-track');
     const bar = el('i'); bar.style.setProperty('--bar',color);
     bar.style.width = (value ?? 0)+'%'; track.append(bar); return track;
   }
   function renderChart() {
-    window.drawLifeChart($('life-chart'),{person,selected,mode,onSelect:i=>{
+    window.drawLifeChart($('life-chart'),{person,selected,mode,metric,onSelect:i=>{
       stopReplay(); choose(i);
     }});
     $('candle-btn').setAttribute('aria-pressed',mode==='candle');
@@ -126,6 +121,20 @@
     const event = person.events[selected];
     const terminal = selected === person.events.length - 1;
     const diff = delta(selected);
+    $('quote-price').textContent=event.v.toFixed(1);
+    $('quote-change').textContent=signed(diff)+' 点';
+    $('quote-change').className=colorFor(diff);
+    $('map-year').value=String(event.y);
+    $('map-year-value').textContent=event.y+' 年';
+    $('atlas-year-label').textContent=event.y+' 年 · '+event.ageLabel;
+    $('map-year').setAttribute('aria-valuetext',event.y+' 年，'+event.ageLabel);
+    $('health-number').textContent=event.quotes.f9.v.toFixed(1)+' 点';
+    $('health-context').textContent=event.healthRecord?.note || '本年缺少直接身体记载，分值按年龄基线和邻近病况估算。';
+    $('health-source').hidden=!event.healthRecord;
+    if(event.healthRecord){$('health-source').href=event.healthRecord.url;$('health-source').title=event.healthRecord.title;}
+    const activeMeta=profiles[person.id];
+    $('portrait-open').hidden=person.id!=='zhu';
+    $('portrait-open').title=activeMeta.art;
     $('sample-year').replaceChildren(document.createTextNode(event.y),el('small','','年'),el('span','year-age',event.ageLabel));
     $('year-jump').value = String(event.y);
     const deltaBadge = $('score-delta');
@@ -143,30 +152,31 @@
     }));
     const previous=person.events[selected-1];
     const movers = groups.flatMap(g=>g.factors).map((label,i)=>({
-      label, value: event.f[i], before: previous?.f[i]
+      label, value: event.modelF[i], before: previous?.modelF[i]
     })).filter(f=>Number.isFinite(f.value)&&Number.isFinite(f.before)&&f.value!==f.before)
       .sort((a,b)=>Math.abs(b.value-b.before)-Math.abs(a.value-a.before)).slice(0,2);
     const summary=$('factor-moves');
-    const title=el('span','move-title',movers.length?'分项变动最大':'评分覆盖');
+    const title=el('span','move-title',movers.length?'分项变动最大':'数值依据');
     const detail=el('div','move-fields');
     if (movers.length) {
       for(const f of movers) {
-        const chip=el('span','move-chip');chip.append(document.createTextNode(f.label+' '),el('b',colorFor(f.value-f.before),signed(f.value-f.before)));detail.append(chip);
+        const chip=el('span','move-chip');chip.append(document.createTextNode(f.label+' '),el('b',colorFor(f.value-f.before),signed(Math.round((f.value-f.before)*10)/10)));detail.append(chip);
       }
     } else {
-      detail.append(el('span','move-chip',event.facts.length ? event.f.filter(Number.isFinite).length+' / 11 项有据可评' : '沿用 '+event.basis.y+' 年'));
+      detail.append(el('span','move-chip',event.facts.length ? '史事估分' : '模型推演'));
     }
     summary.replaceChildren(title,detail);
-    const src=person.sources[event.s]; $('event-source').href=src.url; $('event-source').title=src.title;
-    $('event-source').textContent = event.facts.length ? '查阅史料' : '查看沿用来源';
+    const src=(!event.facts.length&&event.healthRecord)||person.sources[event.s]; $('event-source').href=src.url; $('event-source').title=src.title;
+    $('event-source').textContent = event.facts.length||event.healthRecord ? '查阅史料' : '查看前期史料';
     [...$('event-list').children].forEach(button=>button.setAttribute('aria-current',Number(button.dataset.index)===selected));
     renderChart();
+    window.drawLifeAtlas($('atlas-body'), {person,year:event.y});
   }
   function choose(index) { selected=index; renderSelection(); syncURL(); }
   function showList() {
     const buttons = [];
     person.events.forEach((e,i) => {
-      if (!showAllYears && !e.facts.length) return;
+      if (!showAllYears && !e.facts.length && !e.healthRecord) return;
       const diff=delta(i);
       const b=el('button','event-item'); b.type='button'; b.dataset.index=String(i);
       const change = i===0?'起点':diff!==0?signed(diff):i===person.events.length-1?'终点':'持平';
@@ -188,6 +198,8 @@
   function renderProfile() {
     const meta=profiles[person.id];
     document.title='人物K线 · '+person.name;
+    $('hero').dataset.person=person.id;
+    $('map-year').min=String(person.start);$('map-year').max=String(person.end);
     $('hero-picture').style.backgroundImage='url("./'+person.id+'.webp")';
     $('person-name').textContent=person.name; $('person-seal').textContent=meta.seal;
     $('hero-category').textContent=meta.category+'  /  '+person.role;
@@ -198,17 +210,22 @@
     updateWindow(); showList(); renderSelection();
   }
   function updateWindow() {
-    $('chart-window').textContent=person.start+'—'+person.end+' 年 · '+person.events.length+' 根年 K · '+weights[preset].label+'权重';
+    $('quote-title').textContent=metricNames[metric]+'指数';
+    $('chart-window').textContent=person.start+'—'+person.end+' · '+person.events.length+' 根年 K'+(metric==='all'?' · '+weights[preset].label+'权重':'');
+    $('metric-select').value=metric;
+    [...$('metric-tabs').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.key===metric));
   }
   function stopReplay() {
     clearInterval(timer); timer=null;
+    $('map-play').setAttribute('aria-pressed',false);$('map-play').querySelector('span').textContent='播放行程';$('map-play').querySelector('use').setAttribute('href','#play');
     $('replay').setAttribute('aria-pressed',false);
     $('replay').querySelector('use').setAttribute('href','#play');
     $('replay').querySelector('span').textContent='回放一生';
   }
-  $('replay').addEventListener('click',()=>{
+  function playYears(fromStart){
     if (timer) { stopReplay(); return; }
-    choose(0);
+    if(fromStart||selected===person.events.length-1)choose(0);
+    $('map-play').setAttribute('aria-pressed',true);$('map-play').querySelector('span').textContent='暂停行程';$('map-play').querySelector('use').setAttribute('href','#pause');
     $('replay').setAttribute('aria-pressed',true);
     $('replay').querySelector('use').setAttribute('href','#pause');
     $('replay').querySelector('span').textContent='暂停回放';
@@ -216,7 +233,20 @@
       choose(selected+1);
       if (selected === person.events.length-1) stopReplay();
     },1100);
-  });
+  }
+  $('replay').addEventListener('click',()=>playYears(true));
+  $('map-play').addEventListener('click',()=>playYears(false));
+  $('map-year').addEventListener('input',()=>{stopReplay();choose(Number($('map-year').value)-person.start);});
+  $('show-health').addEventListener('click',()=>{useMetric('f9');$('market').scrollIntoView({block:'start'});});
+  $('metric-select').replaceChildren(...metrics.map(item=>{
+    const opt=el('option','',item.label+'指数');opt.value=item.id;return opt;
+  }));
+  $('metric-select').addEventListener('change',()=>useMetric($('metric-select').value));
+  for(const key of ['all','agency','life','f9']){
+    const entry=metrics.find(m=>m.id===key);
+    const button=el('button','',entry.short);button.dataset.key=key;
+    button.addEventListener('click',()=>useMetric(key));$('metric-tabs').append(button);
+  }
   $('year-jump').addEventListener('change',()=>{ stopReplay(); choose(Number($('year-jump').value)-person.start); });
   $('all-years').addEventListener('click',()=>{showAllYears=true;showList();});
   $('recorded-years').addEventListener('click',()=>{showAllYears=false;showList();});
@@ -253,7 +283,7 @@
     showDialog('人物库',cards);
   }
   function method(){
-    const intro=section('如何判定涨跌','每个公历年绘一根 K 线。根据当年已收录的事件，从三大维度、十一个因素估分。收盘分高于上年为涨，低于上年为跌。没有新记录时沿用最近一次估分。');
+    const intro=section('如何判定涨跌','每个公历年绘一根 K 线。根据当年已收录的事件，从三大维度、十一个因素估分。收盘分高于上年为涨，低于上年为跌。有记录的年份由史事设定估分，空档年份在前后估分之间推演。每个指数按 0–100 点显示一位小数。');
     const list=groups.map(g=>{
       const item=section(g.label,g.desc);
       const tags=el('div','factors'); g.factors.forEach(t=>tags.append(el('span','',t))); item.append(tags); return item;
@@ -267,30 +297,32 @@
         [...controls.children].forEach(n=>n.setAttribute('aria-pressed',n===b));
       }); controls.append(b);
     }weightsPane.append(controls);
-    const calc=section('计分与缺项','同一维度内，有依据的因素等权平均。缺少史料的因素显示为“资料不足”，不参与平均；整组缺项时，其余组按相对权重计算。综合分在最后取整，分项覆盖变化也可能影响分数。');
-    const graph=section('怎样读年 K','开盘取上一年收盘，收盘取当年最后一条记录的综合分。高低取开盘及年内已收录事件的最高、最低分。持平时实体为短横线。出生年以首条估分开盘，去世本身不扣分。');
+    const calc=section('逐年估算','身份地位等十个因素以有记载的事件作锚点。中间年份以最近的估分为基准，部分计入阶段趋势并加入有界的模拟起伏。丧亲、失守、政变等突变在事件当年计入；出生年缺项使用起始假设。健康使用年龄曲线作基线，有明确身体记录时采用该次史事估分，并在相邻两年有限调整。三个维度内分项等权，再按当前权重合成综合分。');
+    const graph=section('怎样读年 K','开盘取上一年收盘，收盘是年末估分；出生年用第一笔估分开盘。高低覆盖开盘、收盘及同年事件估分，并加入固定规则生成的年内波动区间。所有年线均为叙事模拟，影线不是实测数据。红涨、青跌，数值单位为点。');
     const ages=section('怎样读年龄','年龄按周岁计算，出生为 0 岁。一年中通常跨过一次生日，例如朱元璋在 1368 年经历 39–40 岁，正月登基时仍是 39 岁。卒年只计算在世时段，武则天按通行生年 624 年估算。');
     const context=section('外部环境','战争、灾荒、政变、政策与迁徙会改变生活或权力，在受影响的分项里体现。声望只看当时；后世评价不计入当时的处境。');
     showDialog('读图与评分口径',[intro,ages,graph,weightsPane,...list,calc,context]);
   }
   function details(){
     const e=person.events[selected], previous=person.events[selected-1];
-    const first=section(e.y+' 年 · '+e.ageLabel+' · '+e.t,e.d);
-    first.append(el('p','method-note','开 '+e.o+'　高 '+e.h+'　低 '+e.l+'　收 '+e.v+'  ·  '+weights[preset].label+'权重'));
+    const first=section(e.y+' 年 · '+e.ageLabel+' · '+metricNames[metric]+'指数',e.d);
+    first.append(el('p','method-note','开 '+e.o.toFixed(1)+'　高 '+e.h.toFixed(1)+'　低 '+e.l.toFixed(1)+'　收 '+e.v.toFixed(1)+'  ·  '+weights[preset].label+'权重'));
     const parts=[first]; let field=0;
     groups.forEach((g,groupIndex)=>{
       const block=section(g.label+'  '+(e.m[groupIndex]??'—')+' 分');
       for(const factor of g.factors){
-        const value=e.f[field], prev=previous?.f[field];
+        const value=e.modelF[field], prev=previous?.modelF[field];
         const diff = Number.isFinite(value) && Number.isFinite(prev) ? value-prev : null;
         const row=el('div','factor-row');
-        row.append(el('span','',factor),fillTrack(value,g.color),el('b','',value??'—'),el('em',colorFor(diff),value===null?'资料不足':!previous?'起点':diff===null?'新见':diff===0?'持平':signed(diff)));
+        const name=el('span','',factor);name.append(el('small','factor-origin',e.direct[field]?'史事估分':'模型推演'));
+        row.append(name,fillTrack(value,g.color),el('b','',value.toFixed(1)),el('em',colorFor(diff),!previous?'起点':diff===0?'持平':signed(diff)));
         block.append(row);field++;
       }parts.push(block);
     });
-    const ref=section(e.facts.length?'本年史料':'沿用 '+e.basis.y+' 年的史料');
+    const ref=section(e.facts.length||e.healthRecord?'相关史料':'前期史料 · '+e.basis.y+' 年');
     const refs=new Set(e.facts.length?e.facts.map(f=>f.s):[e.s]);
     for (const key of refs) ref.append(sourceLink(person.sources[key]),el('br'));
+    if(e.healthRecord)ref.append(sourceLink(e.healthRecord),el('br'));
     ref.append(el('p','method-note','分项数值为本站估分，右列为与上一公历年的变化。')); parts.push(ref);
     showDialog('分项评分依据',parts);
   }
@@ -301,6 +333,11 @@
     const form=section('抖音形式参考');form.append(sourceLink({title:'《如果苏轼是一只股票，他的人生走势会怎样》',url:'https://www.douyin.com/video/7697943009203211530'}));
     showDialog('史料与图像来源',[refs,art,form]);
   }
+  $('portrait-open').addEventListener('click',()=>{
+    const img=el('img','full-painting');img.src='./zhu-full.webp';img.alt='明太祖朱元璋全身坐像';
+    const credit=el('p','method-note');credit.append(sourceLink({title:profiles.zhu.art,url:profiles.zhu.artUrl}));
+    showDialog('明太祖全身坐像',[img,credit]);
+  });
   $('open-library').addEventListener('click',library);$('open-method').addEventListener('click',method);
   $('open-detail').addEventListener('click',details);$('open-sources').addEventListener('click',sources);
   $('close-dialog').addEventListener('click',()=>dialog.close());
