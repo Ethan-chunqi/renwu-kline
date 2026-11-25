@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101715">
+  <title>人物K线 · 朱元璋</title>
+  <meta name="description" content="按有史料可查的事件，从社会处境、权力与自主、个人生活十一个因素，阅读历史人物一生的涨跌。">
+  <link rel="icon" href="./mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="people-data.js" defer></script>
+  <script src="chart.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<svg aria-hidden="true" class="svg-library" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="book" viewBox="0 0 24 24"><path d="M3 5c3-1 6-.7 9 1.4C15 4.3 18 4 21 5v14c-3-1-6-.6-9 1.4C9 18.4 6 18 3 19zM12 6.5v14"/></symbol>
+  <symbol id="sliders" viewBox="0 0 24 24"><path d="M3 6h6m4 0h8M3 12h10m4 0h4M3 18h3m4 0h11"/><circle cx="11" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="18" r="2"/></symbol>
+  <symbol id="candle" viewBox="0 0 24 24"><path d="M7 2v4m0 10v5m10-18v8m0 6v5"/><rect x="4.5" y="6" width="5" height="10" rx=".7"/><rect x="14.5" y="11" width="5" height="6" rx=".7"/></symbol>
+  <symbol id="trend" viewBox="0 0 24 24"><path d="m2.5 17.5 6-7 5 3.5 8-9"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="m7 4.5 12 7.5-12 7.5z"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14"/></symbol>
+  <symbol id="pin" viewBox="0 0 24 24"><path d="M18.6 9.7c0 4.9-6.6 10.9-6.6 10.9S5.4 14.6 5.4 9.7a6.6 6.6 0 1 1 13.2 0Z"/><circle cx="12" cy="9.4" r="2.2"/></symbol>
+  <symbol id="calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M7.5 3v5m9-5v5m-13 2.5h17"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-9v.3"/></symbol>
+</defs></svg>
+<header class="site-nav"><div class="wrap nav-inner">
+  <a class="brand" href="#top" aria-label="人物K线首页"><img src="./mark.svg" width="34" height="34" alt="">人物<span>K线</span></a>
+  <nav aria-label="主要导航"><a href="#market">人生走势</a><a href="#timeline">大事年表</a></nav>
+  <button class="library-toggle" id="open-library"><svg class="icon"><use href="#book"/></svg>人物库</button>
+</div></header>
+<main id="top">
+  <section class="hero" id="hero" aria-labelledby="person-name"><div class="hero-picture" id="hero-picture"></div>
+    <div class="wrap hero-inner"><div class="hero-copy">
+      <div class="classification"><span class="dash"></span><span id="hero-category"></span></div>
+      <div class="title-line"><h1 id="person-name">朱元璋</h1><span id="person-seal" class="seal"></span></div>
+      <p id="hero-intro" class="hero-intro"></p>
+      <div class="bio-meta"><span><svg class="icon"><use href="#calendar"/></svg><b id="person-dates"></b></span><i></i><span><svg class="icon"><use href="#pin"/></svg><span id="person-place"></span></span></div>
+    </div></div>
+  </section>
+  <div class="workspace wrap">
+    <div class="workspace-heading"><div class="section-title"><span class="square-mark"></span><h2 id="market">人生走势</h2></div><button id="open-method" class="text-button"><svg class="icon"><use href="#sliders"/></svg>评分口径</button></div>
+    <div class="market-layout">
+      <section class="chart-panel panel" aria-label="走势交互图表">
+        <div class="chart-head"><div><h3>综合境遇指数</h3><p id="chart-window" class="sub"></p></div>
+          <div class="chart-modes" aria-label="图表类型"><button id="candle-btn" aria-pressed="true"><svg class="icon"><use href="#candle"/></svg>K 线</button><button id="line-btn" aria-pressed="false"><svg class="icon"><use href="#trend"/></svg>折线</button></div>
+        </div>
+        <div id="life-chart" aria-label="人生走势，按左右方向键切换节点"></div>
+        <div class="chart-foot"><div class="legend"><span><i class="swatch up"></i>上涨</span><span><i class="swatch down"></i>下跌</span><span><i class="swatch neutral"></i>持平</span></div><button id="replay" class="small-button" aria-pressed="false"><svg class="icon"><use href="#play"/></svg><span>回放一生</span></button></div>
+      </section>
+      <aside class="event-panel panel" id="event-panel" aria-label="选中事件">
+        <div class="year-row"><span id="sample-year"></span><span id="score-delta"></span></div>
+        <h3 id="event-title"></h3><p id="event-desc"></p>
+        <div class="factor-moves" id="factor-moves"></div>
+        <div class="group-bars" id="group-bars"></div>
+        <div class="detail-links"><button id="open-detail" class="detail-btn">查看分项依据</button><a id="event-source" class="source-link" target="_blank" rel="noopener">查阅史料</a></div>
+      </aside>
+    </div>
+    <section class="timeline" aria-labelledby="timeline"><div class="workspace-heading"><div class="section-title"><span class="square-mark"></span><h2 id="timeline">大事年表</h2></div><span class="timeline-count" id="timeline-count"></span></div>
+      <div id="event-list" class="event-list"></div>
+    </section>
+  </div>
+</main>
+<footer><div class="wrap footer-inner"><div class="footer-brand"><img src="./mark.svg" alt="" width="21" height="21">人物K线</div><button id="open-sources">史料与图像来源</button></div></footer>
+
+<dialog id="dialog"><div class="dialog-head"><h2 id="dialog-title"></h2><button id="close-dialog" class="icon-button" aria-label="关闭"><svg class="icon"><use href="#close"/></svg></button></div><div id="dialog-content"></div></dialog>
+</body></html>
